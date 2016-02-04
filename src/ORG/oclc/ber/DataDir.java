@@ -34,13 +34,13 @@ import java.io.UnsupportedEncodingException;
 import java.io.BufferedOutputStream;
 import java.io.FileOutputStream;
 
+import java.nio.ByteBuffer;
+import java.nio.CharBuffer;
+import java.nio.charset.StandardCharsets;
 import java.util.Hashtable;
 import java.util.Vector;
 
 import ORG.oclc.util.Util;
-
-import sun.io.ByteToCharConverter;
-import sun.io.CharToByteConverter;
 
 /** DataDir is a class for manipulating tree structures and for putting data
  * into and getting data out of tree structures. 
@@ -675,7 +675,7 @@ public class DataDir extends ASN1 {
         newdir.byteEncoding     = "UTF8";
 
         if(chars!=null) {
-            CharToByteConverter charToUTF=Util.getUTF8CharToByteConverter();
+
             char[] newChars = Util.fromBars(chars, offset, length);
             if(newChars!=chars) {
                 offset=0;
@@ -684,27 +684,14 @@ public class DataDir extends ASN1 {
             }
 
             newdir.byteDataSource = new byte[length*3];
-
-            try {
-                newdir.count=charToUTF.convert(chars, offset, offset+length,
-                    newdir.byteDataSource, 0, length*3);
-            } catch(sun.io.UnknownCharacterException e) {
-                e.printStackTrace();
-            } catch(sun.io.MalformedInputException e) {
-                e.printStackTrace();
-            } catch(sun.io.ConversionBufferFullException e) {
-                e.printStackTrace();
-            }
-
-            Util.freeUTF8CharToByteConverter(charToUTF);
+            newdir.count = Util.encodeUtf8(chars, offset, length, newdir.byteDataSource, 0, length * 3);
         } else {
             newdir.byteDataSource = new byte[1];
             newdir.count          = 0;
         }
         return newdir;
     }
-    
-    
+
     /**
      * Add a leaf DataDir to the directory with String data.  Render 
      * the String to bytes using the UTF-8 encoding.  The advantage of 
@@ -1471,22 +1458,10 @@ public class DataDir extends ASN1 {
      * @return String
      */
     public final String getUTFString() {
-        char[] buf   = new char[count*2];
-        int numChars = 0;
-
         if(stringDataSource==null ||
           (byteEncoding!=null && !byteEncoding.equals("UTF8"))) {
-            ByteToCharConverter UTFToChar=Util.getUTF8ByteToCharConverter();
-            try {
-                numChars=UTFToChar.convert(byteDataSource, dataOffset,
-                    dataOffset+count, buf, 0, count*2);
-            } catch (java.io.CharConversionException e) {
-                numChars=UTFToChar.nextCharIndex();
-            }
-
-            stringDataSource = new String(buf, 0, numChars);
+            stringDataSource = new String(byteDataSource, dataOffset, count, StandardCharsets.UTF_8);
             byteEncoding     = "UTF8";
-            Util.freeUTF8ByteToCharConverter(UTFToChar);
         }
 
         return stringDataSource;
@@ -1721,29 +1696,14 @@ public class DataDir extends ASN1 {
    */
     public final void replaceUTF(String data) {
 
-        char[] chars = data.toCharArray();
-        CharToByteConverter charToUTF=Util.getUTF8CharToByteConverter();
-        byteDataSource = new byte[data.length()*3];
-
-        try {
-            count=charToUTF.convert(chars, 0, data.length(),
-                                           byteDataSource, 0,
-                                           data.length()*3);
-        } catch(sun.io.UnknownCharacterException e) {
-            e.printStackTrace();
-        } catch(sun.io.MalformedInputException e) {
-            e.printStackTrace();
-        } catch(sun.io.ConversionBufferFullException e) {
-            e.printStackTrace();
-        }
-
+        byteDataSource = data.getBytes(StandardCharsets.UTF_8);
+        count = byteDataSource.length;
         stringDataSource = data;
         byteEncoding = "UTF8";
         dataOffset = 0;
         object = null;
         charDataSource = null;
         number = 0;
-        Util.freeUTF8CharToByteConverter(charToUTF);
     }
             
 

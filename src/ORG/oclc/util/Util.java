@@ -7,12 +7,12 @@ package ORG.oclc.util;
  * @author Jenny Colvard 
  */ 
 import java.io.*;
+import java.nio.ByteBuffer;
+import java.nio.CharBuffer;
+import java.nio.charset.StandardCharsets;
 import java.util.Vector;
 
 import ORG.oclc.ber.*;
-
-import sun.io.ByteToCharConverter;
-import sun.io.CharToByteConverter;
 
 public class Util {
   static final String newLine = System.getProperty("line.separator");
@@ -174,106 +174,19 @@ public class Util {
    }
 
 
-    private static final Vector UTF8CharToByteConverterPool = new Vector(10);
-    /**
-     * Get a CharToByteConverter from the pool or create a new one if there
-     * aren't any available from the pool.
-     * 
-     */
-    public static final CharToByteConverter getUTF8CharToByteConverter() {
-        synchronized (UTF8CharToByteConverterPool) {
-            int                 size = UTF8CharToByteConverterPool.size();
-            CharToByteConverter conv;
-
-            if (size == 0) {
-                // Create a new one
-                try {
-                    conv = CharToByteConverter.getConverter("UTF8");
-                } catch(UnsupportedEncodingException e) { conv=null; }
-            } else {
-                conv = (CharToByteConverter)
-                    UTF8CharToByteConverterPool.elementAt(size - 1);
-                UTF8CharToByteConverterPool.setSize(size - 1);
-            }
-            return(conv);
-        }
+    public static int encodeUtf8(char[] in, int inOffset, int inLength, byte[] out, int outOffset, int outLength) {
+        CharBuffer src = CharBuffer.wrap(in, inOffset, inLength);
+        ByteBuffer dst = ByteBuffer.wrap(out, outOffset, outLength);
+        StandardCharsets.UTF_8.newEncoder().encode(src, dst, true);
+        return dst.position();
     }
 
 
-    /**
-     * Release a UTF8 CharToByteConverter back to the pool.
-     * 
-     * @param conv      the converter
-     * 
-     */
-    public static final void freeUTF8CharToByteConverter(
-      CharToByteConverter conv) {
-        synchronized (UTF8CharToByteConverterPool) {
-            UTF8CharToByteConverterPool.addElement(conv);
-        }
-    }
-
-
-    private static final Vector UTF8ByteToCharConverterPool = new Vector(10);
-    /**
-     * Get a ByteToCharConverter from the pool or create a new one if there
-     * aren't any available from the pool.
-     * 
-     */
-    public static final ByteToCharConverter getUTF8ByteToCharConverter() {
-        synchronized (UTF8ByteToCharConverterPool) {
-            ByteToCharConverter conv;
-            int                 size = UTF8ByteToCharConverterPool.size();
-            if (size == 0) {
-                // Create a new one
-                try {
-                    conv = ByteToCharConverter.getConverter("UTF8");
-                } catch(UnsupportedEncodingException e) { conv=null; }
-            } else {
-                conv = (ByteToCharConverter)
-                    UTF8ByteToCharConverterPool.elementAt(size - 1);
-                UTF8ByteToCharConverterPool.setSize(size - 1);
-            }
-            return(conv);
-        }
-    }
-
-    /**
-     * Release a ByteToCharConverter back to the pool.
-     * 
-     * @param conv      the converter
-     * 
-     */
-    public static final void freeUTF8ByteToCharConverter(
-      ByteToCharConverter conv) {
-        synchronized (UTF8ByteToCharConverterPool) {
-            UTF8ByteToCharConverterPool.addElement(conv);
-        }
-    }
-
-
-    public static final byte[] getUTF8Bytes(String s) {
-        char[]              chars = s.toCharArray();
-        CharToByteConverter conv=Util.getUTF8CharToByteConverter();
-        byte[]              bytes = new byte[chars.length*3], moreBytes;
-
-        try {
-            int count=conv.convert(chars, 0, chars.length,
-                bytes, 0, chars.length*3);
-            freeUTF8CharToByteConverter(conv);
-            moreBytes=new byte[count];
-            System.arraycopy(bytes, 0, moreBytes, 0, count);
-        } catch(sun.io.UnknownCharacterException e) {
-            moreBytes=null;
-            e.printStackTrace();
-        } catch(sun.io.MalformedInputException e) {
-            moreBytes=null;
-            e.printStackTrace();
-        } catch(sun.io.ConversionBufferFullException e) {
-            moreBytes=null;
-            e.printStackTrace();
-        }
-        return moreBytes;
+    public static int decodeUtf8(byte[] in, int inOffset, int inLength, char[] out, int outOffset, int outLength) {
+        ByteBuffer src = ByteBuffer.wrap(in, outOffset, outLength);
+        CharBuffer dst = CharBuffer.wrap(out, inOffset, inLength);
+        StandardCharsets.UTF_8.newDecoder().decode(src, dst, true);
+        return dst.position();
     }
 
 

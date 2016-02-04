@@ -1,11 +1,9 @@
 package ORG.oclc.ber;
 
+import java.nio.charset.StandardCharsets;
 import java.util.Vector;
 
 import ORG.oclc.util.Util;
-
-import sun.io.ByteToCharConverter;
-import sun.io.CharToByteConverter;
 
 public class DataDirTree extends DataDir {
 
@@ -186,27 +184,11 @@ public class DataDirTree extends DataDir {
         if (parent.form == PRIMITIVE)  // can't add a child to a leaf node
             return null;
 
-        char[]              chars = s.toCharArray();
-        CharToByteConverter conv=Util.getUTF8CharToByteConverter();
-        byte[]              bytes = new byte[chars.length*3];
         DataDir             newdir;
 
-        try {
-            int count=conv.convert(chars, 0, chars.length,
-                bytes, 0, chars.length*3);
-            Util.freeUTF8CharToByteConverter(conv);
-            newdir=add(parent, fldid, asn1class, bytes, 0, count);
-            newdir.stringDataSource = s;
-        } catch(sun.io.UnknownCharacterException e) {
-            e.printStackTrace();
-            newdir=null;
-        } catch(sun.io.MalformedInputException e) {
-            e.printStackTrace();
-            newdir=null;
-        } catch(sun.io.ConversionBufferFullException e) {
-            e.printStackTrace();
-            newdir=null;
-        }
+        byte[] bytes = s.getBytes(StandardCharsets.UTF_8);
+        newdir=add(parent, fldid, asn1class, bytes, 0, bytes.length);
+        newdir.stringDataSource = s;
         return newdir;
     }
 
@@ -216,25 +198,11 @@ public class DataDirTree extends DataDir {
         if (parent.form == PRIMITIVE)  // can't add a child to a leaf node
             return null;
 
-        CharToByteConverter conv=Util.getUTF8CharToByteConverter();
         byte[]              bytes = new byte[count*3];
         DataDir             newdir;
 
-        try {
-            int newcount=conv.convert(chars, offset, count,
-                bytes, 0, count*3);
-            Util.freeUTF8CharToByteConverter(conv);
-            newdir=add(parent, fldid, asn1class, bytes, 0, newcount);
-        } catch(sun.io.UnknownCharacterException e) {
-            e.printStackTrace();
-            newdir=null;
-        } catch(sun.io.MalformedInputException e) {
-            e.printStackTrace();
-            newdir=null;
-        } catch(sun.io.ConversionBufferFullException e) {
-            e.printStackTrace();
-            newdir=null;
-        }
+        int newcount=Util.encodeUtf8(chars, offset, count, bytes, 0, count*3);
+        newdir=add(parent, fldid, asn1class, bytes, 0, newcount);
         return newdir;
     }
 
