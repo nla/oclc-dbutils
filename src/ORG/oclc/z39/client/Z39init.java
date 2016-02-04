@@ -459,10 +459,10 @@ public class Z39init {
 			    if(userInfo.OID()==External.OtherInformationOID) { 
 				ExternalOtherInformation otherInfo = new 
 				    ExternalOtherInformation(userInfo.child()); 
-				Enumeration enum=otherInfo.elements(); 
+				Enumeration enumeration=otherInfo.elements();
 				External extern; 
-				while(enum.hasMoreElements()) { 
-				    extern=(External)enum.nextElement(); 
+				while(enumeration.hasMoreElements()) {
+				    extern=(External)enumeration.nextElement();
 				    if(extern.OID().equals( 
 					   External.oclcUserInformation1OID)) { 
 					doOclcUserInformation1(extern); 
