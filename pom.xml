@@ -3,7 +3,7 @@
   <modelVersion>4.0.0</modelVersion>  
   <artifactId>oclc-dbutils</artifactId>
   <groupId>au.gov.nla</groupId>
-  <version>0.1.0</version>
+  <version>1.2.1</version>
 
   <build>
     <sourceDirectory>${basedir}/src</sourceDirectory>
